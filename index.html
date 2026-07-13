@@ -22,7 +22,7 @@
         .btn-sm { padding: 4px 12px; font-size: 0.78rem; }
         .btn-xs { padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
+
         #loginPage { width: 100%; max-width: 400px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 44px 36px 36px; text-align: center; }
         #loginPage .logo { font-size: 2.2rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
         #loginPage .sub { color: var(--text-light); font-size: 0.95rem; margin-bottom: 28px; }
@@ -31,7 +31,7 @@
         #loginPage input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
         #loginPage .btn { width: 100%; justify-content: center; font-size: 1.05rem; padding: 14px; }
         #loginPage .hint { font-size: 0.78rem; color: var(--text-light); margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
-        
+
         #dashboardPage { width: 100%; max-width: 1280px; margin: 0 auto; display: none; }
         .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: var(--card-bg); padding: 16px 28px; border-radius: var(--radius); box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 28px; }
         .topbar .brand { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
@@ -42,7 +42,7 @@
         .sync-status.online { color: var(--green); }
         .sync-status.offline { color: var(--red); }
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-        
+
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
         .project-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px 20px; cursor: pointer; transition: transform 0.2s,box-shadow 0.2s; border: 1px solid transparent; position: relative; }
         .project-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.10); border-color: var(--primary-light); }
@@ -54,7 +54,7 @@
         .project-card .p-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; }
         .project-card .p-actions .btn { padding: 2px 10px; font-size: 0.7rem; }
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--card-bg); border-radius: var(--radius); color: var(--text-light); }
-        
+
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.30); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
         .modal-overlay.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
@@ -67,7 +67,7 @@
         .modal-header .modal-title-group .modal-sub { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
         .modal-header .close-btn { background: none; border: none; font-size: 1.6rem; color: var(--text-light); cursor: pointer; padding: 0 6px; line-height: 1; }
         .modal-header .close-btn:hover { color: var(--text); }
-        
+
         .modal-body { padding: 20px 28px 16px; overflow-y: auto; flex: 1; }
         .member-area { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; padding: 10px 14px; background: #f7f9fc; border-radius: 8px; }
         .member-area .member-list { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -78,7 +78,7 @@
         .member-area .member-add input { padding: 4px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.85rem; width: 140px; }
         .member-area .member-add input:focus { outline: none; border-color: var(--primary); }
         .member-area .member-add .btn { padding: 4px 12px; font-size: 0.8rem; }
-        
+
         .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 500px; }
         th { background: #f7f9fc; text-align: left; padding: 12px 14px; font-weight: 600; color: var(--text); border-bottom: 2px solid var(--border); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -88,7 +88,7 @@
         tr.drag-over { border-top: 2px solid var(--primary); }
         .drag-handle { cursor: grab; color: var(--text-light); font-size: 1rem; padding: 0 4px; user-select: none; }
         .drag-handle:active { cursor: grabbing; }
-        
+
         .step-name { font-weight: 500; }
         .step-name input { border: none; background: transparent; font-weight: 500; font-size: 0.92rem; width: 100%; padding: 4px 0; outline: none; font-family: var(--font); }
         .step-name input:focus { border-bottom: 2px solid var(--primary); }
@@ -114,23 +114,23 @@
         .remark-add .btn { padding: 6px 16px; font-size: 0.82rem; }
         .step-actions { display: flex; gap: 6px; align-items: center; }
         .step-actions .btn { padding: 2px 10px; font-size: 0.7rem; }
-        
+
         .add-step-area { display: flex; gap: 12px; margin-top: 14px; align-items: center; }
         .add-step-area input { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem; flex: 1; min-width: 150px; }
         .add-step-area input:focus { outline: none; border-color: var(--primary); }
-        
+
         .modal-footer { padding: 12px 28px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; flex-shrink: 0; }
         .modal-footer .left-actions { display: flex; gap: 8px; }
         .modal-footer .right-actions { display: flex; gap: 8px; }
-        
+
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: #fff; padding: 12px 28px; border-radius: 40px; font-size: 0.92rem; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.4s ease; z-index: 2000; pointer-events: none; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        
+
         .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
         .loading-overlay.active { display: flex; }
         .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
+
         @media (max-width: 640px) {
             #loginPage { padding: 28px 20px 24px; }
             .topbar { padding: 12px 16px; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -249,7 +249,7 @@
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
         // ================================================================
-        //  1. Supabase 配置（需要替换为你自己的）
+        //  1. Supabase 配置（已填入你的真实配置）
         // ================================================================
         const SUPABASE_URL = 'https://tlzsqmffeblgbgfkhvrk.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsenNxbWZmZWJsZ2JnZmtodnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTMzNjEsImV4cCI6MjA5OTUyOTM2MX0.adkn_wtDTBugAp2FPKw4Ywdu9Grd-ZY7QsXHb6Snh-Q'
@@ -367,7 +367,7 @@
             try {
                 const { data, error } = await supabase.from('projects').select('*');
                 if (error) throw error;
-                
+
                 if (data) {
                     projects = data.map(p => {
                         const proj = { ...p };
@@ -382,7 +382,7 @@
                 } else {
                     projects = [];
                 }
-                
+
                 isOnline = true;
                 updateSyncStatus(true);
                 if (currentUser) renderDashboard();
@@ -395,7 +395,6 @@
                 console.error('Fetch error:', e);
                 isOnline = false;
                 updateSyncStatus(false);
-                showToast('数据同步失败');
             }
         }
 
@@ -429,18 +428,21 @@
 
         async function saveProject(project) {
             try {
+                const stepsToSave = Array.isArray(project.steps) ? project.steps : [];
                 const { error } = await supabase.from('projects').upsert({
                     id: project.id,
                     name: project.name,
                     members: project.members,
-                    steps: project.steps,
+                    steps: stepsToSave,
                     updated_at: new Date().toISOString(),
                     updated_by: currentUser
-                });
+                }, { onConflict: 'id' });
+
                 if (error) throw error;
+                return true;
             } catch (e) {
                 console.error('Save failed:', e);
-                showToast('保存失败，请重试');
+                return false;
             }
         }
 
@@ -523,18 +525,18 @@
             if (!user) { showToast('请输入用户名'); return; }
             if (!USER_CREDENTIALS[user]) { showToast('用户名不存在'); return; }
             if (USER_CREDENTIALS[user] !== pass) { showToast('密码错误'); return; }
-            
+
             currentUser = user;
             loginPage.style.display = 'none';
             dashboardPage.style.display = 'block';
             currentUserName.textContent = user;
             userAvatar.textContent = getUserInitials(user);
             populateUserDatalist();
-            
+
             showLoading(true);
             await initSupabase();
             showLoading(false);
-            
+
             renderDashboard();
             showToast('👋 欢迎，' + user);
         }
@@ -646,19 +648,19 @@
                 const tr = document.createElement('tr');
                 tr.draggable = true;
                 tr.dataset.index = index;
-                
+
                 const tdHandle = document.createElement('td');
                 tdHandle.style.width = '30px';
                 tdHandle.style.textAlign = 'center';
                 tdHandle.innerHTML = '<span class="drag-handle" title="拖动排序">☰</span>';
-                
+
                 tr.addEventListener('dragstart', handleDragStart);
                 tr.addEventListener('dragenter', handleDragEnter);
                 tr.addEventListener('dragover', handleDragOver);
                 tr.addEventListener('dragleave', handleDragLeave);
                 tr.addEventListener('drop', handleDrop);
                 tr.addEventListener('dragend', handleDragEnd);
-                
+
                 const tdName = document.createElement('td');
                 tdName.className = 'step-name';
                 const inpName = document.createElement('input');
@@ -803,18 +805,18 @@
             e.stopPropagation();
             e.preventDefault();
             this.classList.remove('drag-over');
-            
+
             if (dragSrcIndex === null) return;
             const targetIndex = parseInt(this.dataset.index);
             if (dragSrcIndex === targetIndex) return;
-            
+
             const proj = findProject(currentProjectId);
             if (!proj) return;
-            
+
             const movedStep = proj.steps[dragSrcIndex];
             proj.steps.splice(dragSrcIndex, 1);
             proj.steps.splice(targetIndex, 0, movedStep);
-            
+
             dragSrcIndex = null;
             await saveProject(proj);
             showToast('已调整步骤顺序');
@@ -838,7 +840,7 @@
         }
 
         // ================================================================
-        //  13. 新建 / 删除项目
+        //  13. 新建 / 删除项目（核心修复：无论网络如何，窗口必须打开）
         // ================================================================
         async function createNewProject() {
             const newProject = {
@@ -847,15 +849,38 @@
                 members: [currentUser],
                 steps: []
             };
-            await saveProject(newProject);
+
+            // 1. 先加入本地数组
+            projects.push(newProject);
+
+            // 2. 立即刷新看板（显示新项目卡片）
+            renderDashboard();
+
+            // 3. 立即打开编辑窗口（这是用户需要的！）
             openProjectDetail(newProject.id);
             showToast('已创建新项目，请编辑名称和步骤');
+
+            // 4. 后台尝试同步到云端（失败不影响本地使用）
+            try {
+                const saved = await saveProject(newProject);
+                if (!saved) {
+                    showToast('云端同步失败，数据仅保存在本地');
+                }
+            } catch (e) {
+                showToast('云端同步失败，数据仅保存在本地');
+            }
         }
 
         async function deleteProject(projectId) {
             if (!confirm('确定删除此项目吗？所有数据将丢失！')) return;
-            await deleteProjectBackend(projectId);
+
+            // 先从本地数组删除
+            projects = projects.filter(p => p.id !== projectId);
             if (currentProjectId === projectId) closeModal();
+            renderDashboard();
+
+            // 后台尝试删除云端数据
+            await deleteProjectBackend(projectId);
             showToast('已删除项目');
         }
 
@@ -896,42 +921,9 @@
                     showToast('项目名称不能为空');
                 }
             });
-
-            console.log('📋 学术看板 云端协作版已启动');
-            console.log('👥 用户列表:', Object.keys(USER_CREDENTIALS));
         }
 
         init();
     </script>
-
-    <!-- 
-    ================================================================
-    📖 Supabase 配置教程（只需做一次，不需要 Google 账号）
-    ================================================================
-    
-    1. 访问 https://supabase.com
-    2. 点击「Start your project」，用邮箱注册（不需要 Google）
-    3. 创建新项目，选择区域：Singapore（东南亚，国内访问较快）
-    4. 进入项目后，左侧「Table Editor」→「New table」
-    5. 表名填 projects，勾选「Enable Row Level Security (RLS)」
-    6. 添加以下字段：
-       - id: text  (Primary Key)
-       - name: text
-       - members: text[]  (Array of text)
-       - steps: jsonb
-       - updated_at: timestamptz
-       - updated_by: text
-    7. 关闭 RLS（开发用）：左侧「Authentication」→「Policies」
-       → 点击 projects 表 →「New Policy」→「Full Access」→ 确认
-       或直接执行 SQL：alter table projects disable row level security;
-    8. 开启实时同步：左侧「Database」→「Replication」→ 找到 projects
-       → 点击 toggle 开启
-    9. 获取配置：左侧「Project Settings」→「API」
-       - URL 对应 SUPABASE_URL
-       - anon public 对应 SUPABASE_ANON_KEY
-    10. 把这两个值替换到代码顶部的占位符
-    
-    部署：GitHub Pages / Vercel / 腾讯云 COS 均可
-    -->
 </body>
 </html>
