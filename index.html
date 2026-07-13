@@ -249,7 +249,7 @@
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
         // ================================================================
-        //  1. Supabase 配置（已填入你的真实配置）
+        //  1. Supabase 配置
         // ================================================================
         const SUPABASE_URL = 'https://tlzsqmffeblgbgfkhvrk.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsenNxbWZmZWJsZ2JnZmtodnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTMzNjEsImV4cCI6MjA5OTUyOTM2MX0.adkn_wtDTBugAp2FPKw4Ywdu9Grd-ZY7QsXHb6Snh-Q'
@@ -257,7 +257,7 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
         // ================================================================
-        //  2. 用户凭证（开发者管理，无注册功能）
+        //  2. 用户凭证
         // ================================================================
         const USER_CREDENTIALS = {
             '陶天毅-四川大学': 'ttyscu',
@@ -282,7 +282,7 @@
         let realtimeChannel = null;
 
         // ================================================================
-        //  3.5 本地持久化配置（新增）
+        //  3.5 本地持久化配置
         // ================================================================
         const LS_PROJECTS_KEY = 'academic_board_projects_v1';
         const LS_SESSION_KEY = 'academic_board_session_v1';
@@ -367,7 +367,7 @@
             return projects.find(p => p.id === id);
         }
 
-        // 本地缓存读写（新增）
+        // 本地缓存读写
         function saveProjectsToLocal() {
             try {
                 localStorage.setItem(LS_PROJECTS_KEY, JSON.stringify(projects));
@@ -393,14 +393,19 @@
         }
 
         // ================================================================
-        //  6. Supabase 数据操作
+        //  6. Supabase 数据操作（核心修复）
         // ================================================================
         async function fetchProjects() {
+            // 先加载本地缓存，确保即使网络失败或云端为空也有数据
+            loadProjectsFromLocal();
+            
             try {
                 const { data, error } = await supabase.from('projects').select('*');
                 if (error) throw error;
 
-                if (data) {
+                // 关键修复：只有云端确实有数据时才覆盖本地
+                // 空数组 [] 是 truthy，必须用 data.length > 0 判断
+                if (data && data.length > 0) {
                     projects = data.map(p => {
                         const proj = { ...p };
                         if (p.steps) {
@@ -411,9 +416,12 @@
                         proj.steps.forEach(s => { if (!s.remarks) s.remarks = []; });
                         return proj;
                     });
-                    saveProjectsToLocal(); // 缓存到本地
+                    saveProjectsToLocal(); // 云端有数据，同步到本地
                 } else {
-                    projects = [];
+                    // 云端为空但本地有数据：尝试把本地数据推送到云端
+                    if (projects.length > 0) {
+                        await syncLocalToCloud();
+                    }
                 }
 
                 isOnline = true;
@@ -428,16 +436,36 @@
                 console.error('Fetch error:', e);
                 isOnline = false;
                 updateSyncStatus(false);
-                // 网络失败时从本地缓存恢复
-                if (loadProjectsFromLocal()) {
-                    if (currentUser) renderDashboard();
-                    if (currentProjectId) {
-                        const proj = findProject(currentProjectId);
-                        if (proj) renderModalContent(proj);
-                    }
-                    showToast('⚠️ 云端连接失败，已从本地缓存恢复');
+                // 本地缓存已在开头加载
+                if (currentUser) renderDashboard();
+                if (currentProjectId) {
+                    const proj = findProject(currentProjectId);
+                    if (proj) renderModalContent(proj);
+                }
+                showToast('⚠️ 云端连接失败，已使用本地缓存');
+            }
+        }
+
+        // 将本地未同步的数据推送到云端
+        async function syncLocalToCloud() {
+            if (!isOnline || projects.length === 0) return;
+            console.log('Syncing local projects to cloud:', projects.length);
+            for (const proj of projects) {
+                try {
+                    const stepsToSave = Array.isArray(proj.steps) ? proj.steps : [];
+                    await supabase.from('projects').upsert({
+                        id: proj.id,
+                        name: proj.name,
+                        members: proj.members,
+                        steps: stepsToSave,
+                        updated_at: new Date().toISOString(),
+                        updated_by: currentUser
+                    }, { onConflict: 'id' });
+                } catch (e) {
+                    console.error('Sync project failed:', proj.id, e);
                 }
             }
+            showToast('本地数据已同步到云端');
         }
 
         function subscribeProjects() {
@@ -481,11 +509,11 @@
                 }, { onConflict: 'id' });
 
                 if (error) throw error;
-                saveProjectsToLocal(); // 成功也缓存
+                saveProjectsToLocal();
                 return true;
             } catch (e) {
                 console.error('Save failed:', e);
-                saveProjectsToLocal(); // 失败时至少保存到本地，防止丢失
+                saveProjectsToLocal(); // 失败时至少保存到本地
                 return false;
             }
         }
@@ -497,7 +525,6 @@
                 saveProjectsToLocal();
             } catch (e) {
                 console.error('Delete failed:', e);
-                showToast('云端删除失败，但本地数据已更新');
                 saveProjectsToLocal();
             }
         }
@@ -563,7 +590,7 @@
         }
 
         // ================================================================
-        //  8. 登录 / 登出（新增本地会话保持）
+        //  8. 登录 / 登出
         // ================================================================
         async function doLogin() {
             const user = usernameInput.value.trim();
@@ -573,7 +600,6 @@
             if (USER_CREDENTIALS[user] !== pass) { showToast('密码错误'); return; }
 
             currentUser = user;
-            // 保存会话到本地，1小时有效
             localStorage.setItem(LS_SESSION_KEY, JSON.stringify({
                 user: user,
                 pass: pass,
@@ -597,7 +623,7 @@
         function doLogout() {
             currentUser = null;
             currentProjectId = null;
-            localStorage.removeItem(LS_SESSION_KEY); // 清除会话
+            localStorage.removeItem(LS_SESSION_KEY);
             if (realtimeChannel) {
                 supabase.removeChannel(realtimeChannel);
                 realtimeChannel = null;
@@ -610,7 +636,6 @@
             showToast('已退出');
         }
 
-        // 自动登录检查（新增）
         function tryAutoLogin() {
             const raw = localStorage.getItem(LS_SESSION_KEY);
             if (!raw) return false;
@@ -678,7 +703,7 @@
         }
 
         // ================================================================
-        //  10. 成员管理（修复：操作后即时刷新）
+        //  10. 成员管理
         // ================================================================
         function renderMembers(project) {
             memberList.innerHTML = '';
@@ -705,10 +730,9 @@
                     }
                     proj.members = proj.members.filter(m => m !== member);
                     await saveProject(proj);
-                    // 即时刷新成员列表和标题栏
                     renderMembers(proj);
                     modalProjectMembers.textContent = '成员：' + proj.members.join(' · ');
-                    renderDashboard(); // 看板上的成员信息也要更新
+                    renderDashboard();
                     showToast(`已移除成员 ${member}`);
                 });
             });
@@ -724,7 +748,6 @@
             if (proj.members.includes(name)) { showToast('该成员已在项目中'); return; }
             proj.members.push(name);
             await saveProject(proj);
-            // 即时刷新
             renderMembers(proj);
             modalProjectMembers.textContent = '成员：' + proj.members.join(' · ');
             renderDashboard();
@@ -732,7 +755,7 @@
         }
 
         // ================================================================
-        //  11. 步骤管理（修复：操作后即时刷新 + 进度显示去重）
+        //  11. 步骤管理
         // ================================================================
         function renderSteps(project) {
             modalStepBody.innerHTML = '';
@@ -797,7 +820,6 @@
                 });
                 tdProg.appendChild(inpProg);
                 tdProg.appendChild(displaySpan);
-                // 修复：去掉多余的 '%' 文本节点，避免显示 "4 4% %"
 
                 const tdRemark = document.createElement('td');
                 tdRemark.className = 'remark-cell';
@@ -818,7 +840,7 @@
                         delBtn.addEventListener('click', async () => {
                             step.remarks = step.remarks.filter(rem => rem !== r);
                             await saveProject(project);
-                            renderSteps(project); // 即时刷新步骤列表
+                            renderSteps(project);
                             showToast('已删除备注');
                         });
                         li.appendChild(delBtn);
@@ -841,7 +863,7 @@
                     if (!step.remarks) step.remarks = [];
                     step.remarks.push({ user: currentUser, content: content, time: Date.now() });
                     await saveProject(project);
-                    renderSteps(project); // 即时刷新步骤列表
+                    renderSteps(project);
                     showToast('备注已添加');
                 });
                 addDiv.appendChild(inpRemark);
@@ -857,8 +879,8 @@
                     if (confirm(`确定删除步骤「${step.name}」吗？`)) {
                         project.steps.splice(index, 1);
                         await saveProject(project);
-                        renderSteps(project); // 即时刷新
-                        renderDashboard(); // 看板平均进度也要更新
+                        renderSteps(project);
+                        renderDashboard();
                         showToast('已删除步骤');
                     }
                 });
@@ -915,7 +937,7 @@
 
             dragSrcIndex = null;
             await saveProject(proj);
-            renderSteps(proj); // 即时刷新
+            renderSteps(proj);
             showToast('已调整步骤顺序');
         }
 
@@ -933,13 +955,13 @@
             proj.steps.push({ name: name, progress: 0, remarks: [] });
             newStepInput.value = '';
             await saveProject(proj);
-            renderSteps(proj); // 即时刷新
-            renderDashboard(); // 看板平均进度更新
+            renderSteps(proj);
+            renderDashboard();
             showToast(`已添加步骤「${name}」`);
         }
 
         // ================================================================
-        //  13. 新建 / 删除项目（核心修复：本地缓存兜底）
+        //  13. 新建 / 删除项目
         // ================================================================
         async function createNewProject() {
             const newProject = {
@@ -950,7 +972,7 @@
             };
 
             projects.push(newProject);
-            saveProjectsToLocal(); // 立即本地缓存
+            saveProjectsToLocal();
             renderDashboard();
             openProjectDetail(newProject.id);
             showToast('已创建新项目，请编辑名称和步骤');
@@ -969,7 +991,7 @@
             if (!confirm('确定删除此项目吗？所有数据将丢失！')) return;
 
             projects = projects.filter(p => p.id !== projectId);
-            saveProjectsToLocal(); // 更新本地缓存
+            saveProjectsToLocal();
             if (currentProjectId === projectId) closeModal();
             renderDashboard();
 
@@ -981,7 +1003,6 @@
         //  14. 事件绑定 & 初始化
         // ================================================================
         function init() {
-            // 先尝试自动登录（新增）
             const autoLoggedIn = tryAutoLogin();
 
             loginBtn.addEventListener('click', doLogin);
@@ -1011,7 +1032,7 @@
                     if (proj) {
                         proj.name = val;
                         await saveProject(proj);
-                        renderDashboard(); // 看板上的项目名称也要更新
+                        renderDashboard();
                     }
                 } else {
                     this.value = findProject(currentProjectId)?.name || '';
