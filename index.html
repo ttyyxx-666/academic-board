@@ -359,37 +359,8 @@
             return Math.round(sum / project.steps.length);
         }
 
-        // ================================================================
-        //  5.1 数据规范化（修复核心：强制转换为数组）
-        // ================================================================
-        function normalizeProject(p) {
-            const proj = { ...p };
-            // members 必须是数组
-            if (typeof proj.members === 'string') {
-                try { proj.members = JSON.parse(proj.members); } catch (e) { proj.members = []; }
-            }
-            if (!Array.isArray(proj.members)) proj.members = [];
-            // steps 必须是数组
-            if (typeof proj.steps === 'string') {
-                try { proj.steps = JSON.parse(proj.steps); } catch (e) { proj.steps = []; }
-            }
-            if (!Array.isArray(proj.steps)) proj.steps = [];
-            // 每个 step 的 remarks 必须是数组
-            proj.steps.forEach(s => {
-                if (!s.remarks) s.remarks = [];
-                if (typeof s.remarks === 'string') {
-                    try { s.remarks = JSON.parse(s.remarks); } catch (e) { s.remarks = []; }
-                }
-                if (!Array.isArray(s.remarks)) s.remarks = [];
-            });
-            return proj;
-        }
-
         function getUserProjects(username) {
-            return projects.filter(p => {
-                if (!p.members || !Array.isArray(p.members)) return false;
-                return p.members.includes(username);
-            });
+            return projects.filter(p => p.members && p.members.includes(username));
         }
 
         function findProject(id) {
@@ -411,7 +382,7 @@
                 if (data) {
                     const parsed = JSON.parse(data);
                     if (Array.isArray(parsed)) {
-                        projects = parsed.map(p => normalizeProject(p));
+                        projects = parsed;
                         return true;
                     }
                 }
@@ -425,19 +396,29 @@
         //  6. Supabase 数据操作（核心修复）
         // ================================================================
         async function fetchProjects() {
+            // 先加载本地缓存，确保即使网络失败或云端为空也有数据
             loadProjectsFromLocal();
+            
             try {
                 const { data, error } = await supabase.from('projects').select('*');
                 if (error) throw error;
 
-                console.log('[Sync] 云端返回项目数:', data?.length ?? 0);
-
-                if (data && Array.isArray(data) && data.length > 0) {
-                    projects = data.map(p => normalizeProject(p));
-                    saveProjectsToLocal();
-                    console.log('[Sync] 已用云端数据覆盖本地，项目数:', projects.length);
+                // 关键修复：只有云端确实有数据时才覆盖本地
+                // 空数组 [] 是 truthy，必须用 data.length > 0 判断
+                if (data && data.length > 0) {
+                    projects = data.map(p => {
+                        const proj = { ...p };
+                        if (p.steps) {
+                            proj.steps = Array.isArray(p.steps) ? p.steps : [];
+                        } else {
+                            proj.steps = [];
+                        }
+                        proj.steps.forEach(s => { if (!s.remarks) s.remarks = []; });
+                        return proj;
+                    });
+                    saveProjectsToLocal(); // 云端有数据，同步到本地
                 } else {
-                    console.log('[Sync] 云端无数据，尝试推送本地数据...');
+                    // 云端为空但本地有数据：尝试把本地数据推送到云端
                     if (projects.length > 0) {
                         await syncLocalToCloud();
                     }
@@ -452,9 +433,10 @@
                     else closeModal();
                 }
             } catch (e) {
-                console.error('[Sync] 获取云端数据失败:', e);
+                console.error('Fetch error:', e);
                 isOnline = false;
                 updateSyncStatus(false);
+                // 本地缓存已在开头加载
                 if (currentUser) renderDashboard();
                 if (currentProjectId) {
                     const proj = findProject(currentProjectId);
@@ -470,12 +452,11 @@
             console.log('Syncing local projects to cloud:', projects.length);
             for (const proj of projects) {
                 try {
-                    const normalized = normalizeProject(proj);
-                    const stepsToSave = Array.isArray(normalized.steps) ? normalized.steps : [];
+                    const stepsToSave = Array.isArray(proj.steps) ? proj.steps : [];
                     await supabase.from('projects').upsert({
-                        id: normalized.id,
-                        name: normalized.name,
-                        members: normalized.members,
+                        id: proj.id,
+                        name: proj.name,
+                        members: proj.members,
                         steps: stepsToSave,
                         updated_at: new Date().toISOString(),
                         updated_by: currentUser
@@ -506,20 +487,6 @@
         }
 
         async function initSupabase() {
-            // 先检查数据库连通性，帮助诊断 RLS 问题
-            try {
-                const { count, error } = await supabase.from('projects').select('*', { count: 'exact', head: true });
-                if (error) {
-                    console.warn('[Init] 数据库访问检查失败:', error.message);
-                    if (error.message?.includes('row-level security') || error.code === '42501') {
-                        showToast('⚠️ 数据库被 RLS 拦截，请配置访问策略');
-                    }
-                } else {
-                    console.log('[Init] 数据库连接正常，项目数:', count ?? 'unknown');
-                }
-            } catch (e) {
-                console.warn('[Init] 健康检查异常:', e);
-            }
             await fetchProjects();
             subscribeProjects();
         }
@@ -531,12 +498,11 @@
 
         async function saveProject(project) {
             try {
-                const normalized = normalizeProject(project);
-                const stepsToSave = Array.isArray(normalized.steps) ? normalized.steps : [];
+                const stepsToSave = Array.isArray(project.steps) ? project.steps : [];
                 const { error } = await supabase.from('projects').upsert({
-                    id: normalized.id,
-                    name: normalized.name,
-                    members: normalized.members,
+                    id: project.id,
+                    name: project.name,
+                    members: project.members,
                     steps: stepsToSave,
                     updated_at: new Date().toISOString(),
                     updated_by: currentUser
@@ -547,7 +513,7 @@
                 return true;
             } catch (e) {
                 console.error('Save failed:', e);
-                saveProjectsToLocal();
+                saveProjectsToLocal(); // 失败时至少保存到本地
                 return false;
             }
         }
@@ -658,8 +624,6 @@
             currentUser = null;
             currentProjectId = null;
             localStorage.removeItem(LS_SESSION_KEY);
-            localStorage.removeItem(LS_PROJECTS_KEY); // 修复：清除本地项目缓存
-            projects = []; // 修复：清空内存中的项目
             if (realtimeChannel) {
                 supabase.removeChannel(realtimeChannel);
                 realtimeChannel = null;
