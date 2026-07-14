@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学术任务看板 · 协作版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1e3a5f; --primary-light: #2b5a8a; --bg: #f3f6f9;
+            --card-bg: #ffffff; --text: #1e293b; --text-light: #64748b;
+            --border: #dce0e8; --radius: 14px; --shadow: 0 6px 20px rgba(0,0,0,0.06);
+            --green: #0b7e4b; --red: #b91c1c; --font: 'Inter',-apple-system,system-ui,sans-serif;
+        }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.2s,transform 0.1s; background: var(--primary); color: #fff; }
+        .btn:hover { background: var(--primary-light); transform: translateY(-1px); }
+        .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: #fff; }
+        .btn-danger { background: var(--red); }
+        .btn-danger:hover { background: #7f1d1d; }
+        .btn-sm { padding: 4px 12px; font-size: 0.78rem; }
+        .btn-xs { padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        #loginPage { width: 100%; max-width: 400px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 44px 36px 36px; text-align: center; }
+        #loginPage .logo { font-size: 2.2rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        #loginPage .sub { color: var(--text-light); font-size: 0.95rem; margin-bottom: 28px; }
+        #loginPage label { display: block; text-align: left; font-weight: 500; font-size: 0.9rem; margin-bottom: 4px; color: var(--text); }
+        #loginPage input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 16px; transition: border 0.2s; background: #fff; }
+        #loginPage input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
+        #loginPage .btn { width: 100%; justify-content: center; font-size: 1.05rem; padding: 14px; }
+        #loginPage .hint { font-size: 0.78rem; color: var(--text-light); margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+
+        #dashboardPage { width: 100%; max-width: 1280px; margin: 0 auto; display: none; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: var(--card-bg); padding: 16px 28px; border-radius: var(--radius); box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 28px; }
+        .topbar .brand { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+        .topbar .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .topbar .user-badge { display: flex; align-items: center; gap: 10px; background: #eef2f6; padding: 6px 16px 6px 12px; border-radius: 40px; font-weight: 500; font-size: 0.92rem; }
+        .topbar .user-badge .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; }
+        .sync-status { font-size: 0.75rem; color: var(--text-light); display: flex; align-items: center; gap: 4px; }
+        .sync-status.online { color: var(--green); }
+        .sync-status.offline { color: var(--red); }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        .project-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px 20px; cursor: pointer; transition: transform 0.2s,box-shadow 0.2s; border: 1px solid transparent; position: relative; }
+        .project-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.10); border-color: var(--primary-light); }
+        .project-card .p-title { font-size: 1.2rem; font-weight: 600; color: var(--primary); margin-bottom: 6px; padding-right: 60px; }
+        .project-card .p-members { font-size: 0.85rem; color: var(--text-light); margin-bottom: 12px; }
+        .project-card .p-members span { background: #eef2f6; padding: 0 10px; border-radius: 20px; margin-right: 4px; font-size: 0.75rem; }
+        .project-card .p-progress-summary { display: flex; justify-content: space-between; font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+        .project-card .p-progress-summary .avg { font-weight: 600; color: var(--primary); }
+        .project-card .p-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; }
+        .project-card .p-actions .btn { padding: 2px 10px; font-size: 0.7rem; }
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--card-bg); border-radius: var(--radius); color: var(--text-light); }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.30); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
+        .modal-overlay.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        .modal-box { background: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 960px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.15); animation: slideUp 0.25s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 28px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; gap: 10px; }
+        .modal-header .modal-title-group { flex: 1; min-width: 200px; }
+        .modal-header .modal-title-group input { font-size: 1.4rem; font-weight: 600; border: none; background: transparent; color: var(--primary); width: 100%; padding: 0; outline: none; font-family: var(--font); }
+        .modal-header .modal-title-group input:focus { border-bottom: 2px solid var(--primary); }
+        .modal-header .modal-title-group .modal-sub { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
+        .modal-header .close-btn { background: none; border: none; font-size: 1.6rem; color: var(--text-light); cursor: pointer; padding: 0 6px; line-height: 1; }
+        .modal-header .close-btn:hover { color: var(--text); }
+
+        .modal-body { padding: 20px 28px 16px; overflow-y: auto; flex: 1; }
+        .member-area { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; padding: 10px 14px; background: #f7f9fc; border-radius: 8px; }
+        .member-area .member-list { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .member-area .member-list .member-tag { display: inline-flex; align-items: center; gap: 4px; background: #eef2f6; padding: 2px 10px 2px 12px; border-radius: 20px; font-size: 0.85rem; }
+        .member-area .member-list .member-tag .del-member { background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.8rem; padding: 0 2px; opacity: 0.6; }
+        .member-area .member-list .member-tag .del-member:hover { opacity: 1; }
+        .member-area .member-add { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+        .member-area .member-add input { padding: 4px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.85rem; width: 140px; }
+        .member-area .member-add input:focus { outline: none; border-color: var(--primary); }
+        .member-area .member-add .btn { padding: 4px 12px; font-size: 0.8rem; }
+
+        .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 500px; }
+        th { background: #f7f9fc; text-align: left; padding: 12px 14px; font-weight: 600; color: var(--text); border-bottom: 2px solid var(--border); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3px; }
+        td { padding: 10px 14px; border-bottom: 1px solid #f0f2f6; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr.dragging { opacity: 0.5; background: #e8f0fe; }
+        tr.drag-over { border-top: 2px solid var(--primary); }
+        .drag-handle { cursor: grab; color: var(--text-light); font-size: 1rem; padding: 0 4px; user-select: none; }
+        .drag-handle:active { cursor: grabbing; }
+
+        .step-name { font-weight: 500; }
+        .step-name input { border: none; background: transparent; font-weight: 500; font-size: 0.92rem; width: 100%; padding: 4px 0; outline: none; font-family: var(--font); }
+        .step-name input:focus { border-bottom: 2px solid var(--primary); }
+        .progress-cell { min-width: 110px; }
+        .progress-cell input[type="number"] { width: 60px; padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; font-size: 0.9rem; text-align: center; background: transparent; transition: background 0.2s,border 0.2s; }
+        .progress-cell input[type="number"]:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
+        .progress-cell input[type="number"]:hover { background: #f7f9fc; }
+        .progress-cell .pct { margin-left: 2px; font-size: 0.85rem; color: var(--text-light); }
+        .progress-display { font-weight: 600; margin-left: 4px; }
+        .progress-display.green { color: var(--green); }
+        .progress-display.red { color: var(--red); }
+        .remark-cell { max-width: 280px; }
+        .remark-list { list-style: none; margin: 0 0 6px 0; padding: 0; font-size: 0.85rem; }
+        .remark-list li { padding: 4px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
+        .remark-list li .rm-content { flex: 1; }
+        .remark-list li .rm-user { font-weight: 600; color: var(--primary); }
+        .remark-list li .rm-time { font-size: 0.7rem; color: var(--text-light); margin-left: 8px; }
+        .remark-list li .rm-del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.8rem; padding: 0 4px; opacity: 0.5; }
+        .remark-list li .rm-del:hover { opacity: 1; }
+        .remark-add { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+        .remark-add input { flex: 1; min-width: 120px; padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+        .remark-add input:focus { outline: none; border-color: var(--primary); }
+        .remark-add .btn { padding: 6px 16px; font-size: 0.82rem; }
+        .step-actions { display: flex; gap: 6px; align-items: center; }
+        .step-actions .btn { padding: 2px 10px; font-size: 0.7rem; }
+
+        .add-step-area { display: flex; gap: 12px; margin-top: 14px; align-items: center; }
+        .add-step-area input { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem; flex: 1; min-width: 150px; }
+        .add-step-area input:focus { outline: none; border-color: var(--primary); }
+
+        .modal-footer { padding: 12px 28px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; flex-shrink: 0; }
+        .modal-footer .left-actions { display: flex; gap: 8px; }
+        .modal-footer .right-actions { display: flex; gap: 8px; }
+
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: #fff; padding: 12px 28px; border-radius: 40px; font-size: 0.92rem; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.4s ease; z-index: 2000; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+        .loading-overlay.active { display: flex; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 640px) {
+            #loginPage { padding: 28px 20px 24px; }
+            .topbar { padding: 12px 16px; flex-direction: column; align-items: stretch; gap: 10px; }
+            .topbar .actions { justify-content: space-between; }
+            .project-grid { grid-template-columns: 1fr; }
+            .modal-box { max-height: 95vh; border-radius: 12px; }
+            .modal-header { padding: 14px 16px 10px; }
+            .modal-body { padding: 12px 14px 10px; }
+            .modal-footer { padding: 10px 16px 16px; flex-direction: column; align-items: stretch; }
+            .modal-footer .left-actions, .modal-footer .right-actions { justify-content: center; }
+            table { font-size: 0.82rem; min-width: 380px; }
+            .progress-cell input[type="number"] { width: 50px; }
+            .member-area { flex-direction: column; align-items: stretch; }
+            .member-area .member-add { margin-left: 0; width: 100%; }
+            .member-area .member-add input { flex: 1; }
+            .remark-add { flex-direction: column; }
+            .add-step-area { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div style="color: var(--text-light); font-size: 0.9rem;">正在同步数据...</div>
+    </div>
+
+    <div id="loginPage">
+        <div class="logo">📋 学术看板</div>
+        <p class="sub">团队任务进度 · 云端协作版</p>
+        <label for="username">用户名</label>
+        <input type="text" id="username" placeholder="例如：丘成桐-北京大学" />
+        <label for="password">密码</label>
+        <input type="password" id="password" placeholder="输入密码" />
+        <button class="btn" id="loginBtn">登录 →</button>
+        <div class="hint">
+            💡 开发者可在代码顶部 <code>USER_CREDENTIALS</code> 中增减用户<br>
+            <span style="color: var(--green);">数据已接入云端，多人实时协作</span>
+        </div>
+    </div>
+
+    <div id="dashboardPage">
+        <header class="topbar">
+            <div class="brand">📋 学术看板</div>
+            <div class="actions">
+                <button class="btn" id="newProjectBtn">➕ 新建项目</button>
+                <div class="user-badge">
+                    <span class="avatar" id="userAvatar">?</span>
+                    <span id="currentUserName">用户</span>
+                </div>
+                <div class="sync-status offline" id="syncStatus">
+                    <span class="sync-dot"></span>
+                    <span id="syncStatusText">离线</span>
+                </div>
+                <button class="btn btn-outline btn-sm" id="logoutBtn">退出</button>
+            </div>
+        </header>
+        <div class="project-grid" id="projectGrid"></div>
+    </div>
+
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <input type="text" id="modalProjectName" placeholder="项目名称" />
+                    <div class="modal-sub" id="modalProjectMembers">成员：</div>
+                </div>
+                <button class="close-btn" id="modalCloseBtn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="member-area" id="memberArea">
+                    <div class="member-list" id="memberList"></div>
+                    <div class="member-add">
+                        <input type="text" id="newMemberInput" placeholder="输入用户名" list="userDatalist" />
+                        <datalist id="userDatalist"></datalist>
+                        <button class="btn btn-sm" id="addMemberBtn">添加</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
+                    <span style="font-weight:600; font-size:0.95rem;">📅 步骤与进度</span>
+                    <span style="font-size:0.78rem; color:var(--text-light);">拖动 ☰ 可排序，点击数字修改进度</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:30px;"></th>
+                                <th style="min-width:120px;">步骤</th>
+                                <th style="min-width:100px;">进度</th>
+                                <th>备注</th>
+                                <th style="width:60px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalStepBody"></tbody>
+                    </table>
+                </div>
+                <div class="add-step-area">
+                    <input type="text" id="newStepInput" placeholder="新步骤名称" />
+                    <button class="btn btn-sm" id="addStepBtn">添加步骤</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="left-actions">
+                    <button class="btn btn-danger btn-sm" id="deleteProjectBtn">🗑 删除项目</button>
+                </div>
+                <div class="right-actions">
+                    <button class="btn btn-outline btn-sm" id="modalCloseFooterBtn">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+
+        // ================================================================
+        //  1. Supabase 配置
+        // ================================================================
+        const SUPABASE_URL = 'https://tlzsqmffeblgbgfkhvrk.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsenNxbWZmZWJsZ2JnZmtodnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTMzNjEsImV4cCI6MjA5OTUyOTM2MX0.adkn_wtDTBugAp2FPKw4Ywdu9Grd-ZY7QsXHb6Snh-Q'
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        // ================================================================
+        //  2. 用户凭证
+        // ================================================================
+        const USER_CREDENTIALS = {
+            '陶天毅-四川大学': 'ttyscu',
+            '郭繁颖-复旦大学': 'gfyfdu',
+            '李金铭-复旦大学': 'ljmfdu',
+            '郑润石-上海理工大学': 'zrsusst',
+            '杨鑫-电子科技大学': 'yxuestc',
+            '陶然-四川师范大学': 'trsicnu',
+            '孙晓茹-四川大学': 'sxrscu',
+            '卢相臣-四川大学': 'lxcscu',
+            '陈平-中国联通': 'cpcu'
+        };
+
+        // ================================================================
+        //  3. 状态管理
+        // ================================================================
+        let projects = [];
+        let currentUser = null;
+        let currentProjectId = null;
+        let isOnline = false;
+        let dragSrcIndex = null;
+        let realtimeChannel = null;
+
+        // ================================================================
+        //  3.5 本地持久化配置
+        // ================================================================
+        const LS_PROJECTS_KEY = 'academic_board_projects_v1';
+        const LS_SESSION_KEY = 'academic_board_session_v1';
+        const SESSION_DURATION = 60 * 60 * 1000; // 1小时
+
+        // ================================================================
+        //  4. DOM 引用
+        // ================================================================
+        const $ = (s) => document.querySelector(s);
+        const loginPage = $('#loginPage');
+        const dashboardPage = $('#dashboardPage');
+        const usernameInput = $('#username');
+        const passwordInput = $('#password');
+        const loginBtn = $('#loginBtn');
+        const logoutBtn = $('#logoutBtn');
+        const currentUserName = $('#currentUserName');
+        const userAvatar = $('#userAvatar');
+        const projectGrid = $('#projectGrid');
+        const newProjectBtn = $('#newProjectBtn');
+        const modal = $('#projectModal');
+        const modalProjectName = $('#modalProjectName');
+        const modalProjectMembers = $('#modalProjectMembers');
+        const modalStepBody = $('#modalStepBody');
+        const modalCloseBtn = $('#modalCloseBtn');
+        const modalCloseFooterBtn = $('#modalCloseFooterBtn');
+        const deleteProjectBtn = $('#deleteProjectBtn');
+        const memberList = $('#memberList');
+        const newMemberInput = $('#newMemberInput');
+        const addMemberBtn = $('#addMemberBtn');
+        const newStepInput = $('#newStepInput');
+        const addStepBtn = $('#addStepBtn');
+        const userDatalist = $('#userDatalist');
+        const toast = $('#toast');
+        const syncStatus = $('#syncStatus');
+        const syncStatusText = $('#syncStatusText');
+        const loadingOverlay = $('#loadingOverlay');
+        let toastTimer = null;
+
+        // ================================================================
+        //  5. 工具函数
+        // ================================================================
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function showLoading(show) {
+            loadingOverlay.classList.toggle('active', show);
+        }
+
+        function getUserInitials(name) {
+            if (!name) return '?';
+            return name.slice(0, 2).toUpperCase();
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            return d.toLocaleString('zh-CN', { hour12: false });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function calcProjectAvg(project) {
+            if (!project.steps || project.steps.length === 0) return 0;
+            const sum = project.steps.reduce((acc, s) => acc + (Number(s.progress) || 0), 0);
+            return Math.round(sum / project.steps.length);
+        }
+
+        // ================================================================
+        //  5.1 数据规范化（修复核心：强制转换为数组）
+        // ================================================================
+        function normalizeProject(p) {
+            const proj = { ...p };
+            // members 必须是数组
+            if (typeof proj.members === 'string') {
+                try { proj.members = JSON.parse(proj.members); } catch (e) { proj.members = []; }
+            }
+            if (!Array.isArray(proj.members)) proj.members = [];
+            // steps 必须是数组
+            if (typeof proj.steps === 'string') {
+                try { proj.steps = JSON.parse(proj.steps); } catch (e) { proj.steps = []; }
+            }
+            if (!Array.isArray(proj.steps)) proj.steps = [];
+            // 每个 step 的 remarks 必须是数组
+            proj.steps.forEach(s => {
+                if (!s.remarks) s.remarks = [];
+                if (typeof s.remarks === 'string') {
+                    try { s.remarks = JSON.parse(s.remarks); } catch (e) { s.remarks = []; }
+                }
+                if (!Array.isArray(s.remarks)) s.remarks = [];
+            });
+            return proj;
+        }
+
+        function getUserProjects(username) {
+            return projects.filter(p => {
+                if (!p.members || !Array.isArray(p.members)) return false;
+                return p.members.includes(username);
+            });
+        }
+
+        function findProject(id) {
+            return projects.find(p => p.id === id);
+        }
+
+        // 本地缓存读写
+        function saveProjectsToLocal() {
+            try {
+                localStorage.setItem(LS_PROJECTS_KEY, JSON.stringify(projects));
+            } catch (e) {
+                console.error('Local save error:', e);
+            }
+        }
+
+        function loadProjectsFromLocal() {
+            try {
+                const data = localStorage.getItem(LS_PROJECTS_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    if (Array.isArray(parsed)) {
+                        projects = parsed.map(p => normalizeProject(p));
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error('Local load error:', e);
+            }
+            return false;
+        }
+
+        // ================================================================
+        //  6. Supabase 数据操作（核心修复）
+        // ================================================================
+        async function fetchProjects() {
+            loadProjectsFromLocal();
+            try {
+                const { data, error } = await supabase.from('projects').select('*');
+                if (error) throw error;
+
+                console.log('[Sync] 云端返回项目数:', data?.length ?? 0);
+
+                if (data && Array.isArray(data) && data.length > 0) {
+                    projects = data.map(p => normalizeProject(p));
+                    saveProjectsToLocal();
+                    console.log('[Sync] 已用云端数据覆盖本地，项目数:', projects.length);
+                } else {
+                    console.log('[Sync] 云端无数据，尝试推送本地数据...');
+                    if (projects.length > 0) {
+                        await syncLocalToCloud();
+                    }
+                }
+
+                isOnline = true;
+                updateSyncStatus(true);
+                if (currentUser) renderDashboard();
+                if (currentProjectId) {
+                    const proj = findProject(currentProjectId);
+                    if (proj) renderModalContent(proj);
+                    else closeModal();
+                }
+            } catch (e) {
+                console.error('[Sync] 获取云端数据失败:', e);
+                isOnline = false;
+                updateSyncStatus(false);
+                if (currentUser) renderDashboard();
+                if (currentProjectId) {
+                    const proj = findProject(currentProjectId);
+                    if (proj) renderModalContent(proj);
+                }
+                showToast('⚠️ 云端连接失败，已使用本地缓存');
+            }
+        }
+
+        // 将本地未同步的数据推送到云端
+        async function syncLocalToCloud() {
+            if (!isOnline || projects.length === 0) return;
+            console.log('Syncing local projects to cloud:', projects.length);
+            for (const proj of projects) {
+                try {
+                    const normalized = normalizeProject(proj);
+                    const stepsToSave = Array.isArray(normalized.steps) ? normalized.steps : [];
+                    await supabase.from('projects').upsert({
+                        id: normalized.id,
+                        name: normalized.name,
+                        members: normalized.members,
+                        steps: stepsToSave,
+                        updated_at: new Date().toISOString(),
+                        updated_by: currentUser
+                    }, { onConflict: 'id' });
+                } catch (e) {
+                    console.error('Sync project failed:', proj.id, e);
+                }
+            }
+            showToast('本地数据已同步到云端');
+        }
+
+        function subscribeProjects() {
+            realtimeChannel = supabase
+                .channel('projects-channel')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'projects' },
+                    () => { fetchProjects(); }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        isOnline = true;
+                        updateSyncStatus(true);
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                        isOnline = false;
+                        updateSyncStatus(false);
+                    }
+                });
+        }
+
+        async function initSupabase() {
+            // 先检查数据库连通性，帮助诊断 RLS 问题
+            try {
+                const { count, error } = await supabase.from('projects').select('*', { count: 'exact', head: true });
+                if (error) {
+                    console.warn('[Init] 数据库访问检查失败:', error.message);
+                    if (error.message?.includes('row-level security') || error.code === '42501') {
+                        showToast('⚠️ 数据库被 RLS 拦截，请配置访问策略');
+                    }
+                } else {
+                    console.log('[Init] 数据库连接正常，项目数:', count ?? 'unknown');
+                }
+            } catch (e) {
+                console.warn('[Init] 健康检查异常:', e);
+            }
+            await fetchProjects();
+            subscribeProjects();
+        }
+
+        function updateSyncStatus(online) {
+            syncStatus.className = 'sync-status ' + (online ? 'online' : 'offline');
+            syncStatusText.textContent = online ? '已连接' : '离线';
+        }
+
+        async function saveProject(project) {
+            try {
+                const normalized = normalizeProject(project);
+                const stepsToSave = Array.isArray(normalized.steps) ? normalized.steps : [];
+                const { error } = await supabase.from('projects').upsert({
+                    id: normalized.id,
+                    name: normalized.name,
+                    members: normalized.members,
+                    steps: stepsToSave,
+                    updated_at: new Date().toISOString(),
+                    updated_by: currentUser
+                }, { onConflict: 'id' });
+
+                if (error) throw error;
+                saveProjectsToLocal();
+                return true;
+            } catch (e) {
+                console.error('Save failed:', e);
+                saveProjectsToLocal();
+                return false;
+            }
+        }
+
+        async function deleteProjectBackend(projectId) {
+            try {
+                const { error } = await supabase.from('projects').delete().eq('id', projectId);
+                if (error) throw error;
+                saveProjectsToLocal();
+            } catch (e) {
+                console.error('Delete failed:', e);
+                saveProjectsToLocal();
+            }
+        }
+
+        // ================================================================
+        //  7. 渲染看板
+        // ================================================================
+        function renderDashboard() {
+            if (!currentUser) return;
+            const userProjects = getUserProjects(currentUser);
+            if (userProjects.length === 0) {
+                projectGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:2.4rem;margin-bottom:8px;">📭</div>
+                        <p>暂无项目</p>
+                        <p style="font-size:0.85rem; margin-top:8px;">点击右上角「新建项目」开始创建</p>
+                    </div>
+                `;
+                return;
+            }
+            let html = '';
+            userProjects.forEach(p => {
+                const avg = calcProjectAvg(p);
+                const membersStr = p.members.join(' · ');
+                html += `
+                    <div class="project-card" data-project-id="${p.id}">
+                        <div class="p-title">${escapeHtml(p.name)}</div>
+                        <div class="p-members">👥 ${escapeHtml(membersStr)}</div>
+                        <div class="p-progress-summary">
+                            <span>平均进度</span>
+                            <span class="avg">${avg}%</span>
+                        </div>
+                        <div class="p-actions">
+                            <button class="btn btn-outline btn-xs edit-project" data-id="${p.id}">编辑</button>
+                            <button class="btn btn-danger btn-xs delete-project" data-id="${p.id}">删除</button>
+                        </div>
+                    </div>
+                `;
+            });
+            projectGrid.innerHTML = html;
+
+            projectGrid.querySelectorAll('.edit-project').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openProjectDetail(btn.dataset.id);
+                });
+            });
+            projectGrid.querySelectorAll('.delete-project').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pid = btn.dataset.id;
+                    if (confirm(`确定要删除项目「${findProject(pid)?.name || '此项目'}」吗？`)) {
+                        deleteProject(pid);
+                    }
+                });
+            });
+            projectGrid.querySelectorAll('.project-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.p-actions')) return;
+                    openProjectDetail(card.dataset.projectId);
+                });
+            });
+        }
+
+        // ================================================================
+        //  8. 登录 / 登出
+        // ================================================================
+        async function doLogin() {
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value.trim();
+            if (!user) { showToast('请输入用户名'); return; }
+            if (!USER_CREDENTIALS[user]) { showToast('用户名不存在'); return; }
+            if (USER_CREDENTIALS[user] !== pass) { showToast('密码错误'); return; }
+
+            currentUser = user;
+            localStorage.setItem(LS_SESSION_KEY, JSON.stringify({
+                user: user,
+                pass: pass,
+                time: Date.now()
+            }));
+
+            loginPage.style.display = 'none';
+            dashboardPage.style.display = 'block';
+            currentUserName.textContent = user;
+            userAvatar.textContent = getUserInitials(user);
+            populateUserDatalist();
+
+            showLoading(true);
+            await initSupabase();
+            showLoading(false);
+
+            renderDashboard();
+            showToast('👋 欢迎，' + user);
+        }
+
+        function doLogout() {
+            currentUser = null;
+            currentProjectId = null;
+            localStorage.removeItem(LS_SESSION_KEY);
+            localStorage.removeItem(LS_PROJECTS_KEY); // 修复：清除本地项目缓存
+            projects = []; // 修复：清空内存中的项目
+            if (realtimeChannel) {
+                supabase.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+            }
+            dashboardPage.style.display = 'none';
+            loginPage.style.display = 'block';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            closeModal();
+            showToast('已退出');
+        }
+
+        function tryAutoLogin() {
+            const raw = localStorage.getItem(LS_SESSION_KEY);
+            if (!raw) return false;
+            try {
+                const session = JSON.parse(raw);
+                const elapsed = Date.now() - session.time;
+                if (elapsed > SESSION_DURATION) {
+                    localStorage.removeItem(LS_SESSION_KEY);
+                    return false;
+                }
+                if (USER_CREDENTIALS[session.user] && USER_CREDENTIALS[session.user] === session.pass) {
+                    currentUser = session.user;
+                    loginPage.style.display = 'none';
+                    dashboardPage.style.display = 'block';
+                    currentUserName.textContent = session.user;
+                    userAvatar.textContent = getUserInitials(session.user);
+                    populateUserDatalist();
+                    initSupabase().then(() => {
+                        renderDashboard();
+                        showToast('👋 欢迎回来，' + session.user);
+                    });
+                    return true;
+                }
+            } catch (e) {
+                localStorage.removeItem(LS_SESSION_KEY);
+            }
+            return false;
+        }
+
+        function populateUserDatalist() {
+            userDatalist.innerHTML = '';
+            Object.keys(USER_CREDENTIALS).forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                userDatalist.appendChild(opt);
+            });
+        }
+
+        // ================================================================
+        //  9. 模态框
+        // ================================================================
+        function openProjectDetail(projectId) {
+            const project = findProject(projectId);
+            if (!project) { showToast('项目不存在'); return; }
+            if (!project.members.includes(currentUser)) {
+                showToast('你没有权限查看此项目');
+                return;
+            }
+            currentProjectId = projectId;
+            renderModalContent(project);
+            modal.classList.add('active');
+        }
+
+        function renderModalContent(project) {
+            modalProjectName.value = project.name;
+            modalProjectMembers.textContent = '成员：' + project.members.join(' · ');
+            renderMembers(project);
+            renderSteps(project);
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            currentProjectId = null;
+            dragSrcIndex = null;
+        }
+
+        // ================================================================
+        //  10. 成员管理
+        // ================================================================
+        function renderMembers(project) {
+            memberList.innerHTML = '';
+            project.members.forEach(m => {
+                const tag = document.createElement('span');
+                tag.className = 'member-tag';
+                tag.innerHTML = `
+                    ${escapeHtml(m)}
+                    <button class="del-member" data-member="${escapeHtml(m)}">✕</button>
+                `;
+                memberList.appendChild(tag);
+            });
+            memberList.querySelectorAll('.del-member').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const member = btn.dataset.member;
+                    const proj = findProject(currentProjectId);
+                    if (!proj) return;
+                    if (proj.members.length <= 1) {
+                        showToast('项目至少保留一名成员');
+                        return;
+                    }
+                    if (member === currentUser) {
+                        if (!confirm('你正在删除自己，之后将无法查看此项目，确定吗？')) return;
+                    }
+                    proj.members = proj.members.filter(m => m !== member);
+                    await saveProject(proj);
+                    renderMembers(proj);
+                    modalProjectMembers.textContent = '成员：' + proj.members.join(' · ');
+                    renderDashboard();
+                    showToast(`已移除成员 ${member}`);
+                });
+            });
+            newMemberInput.value = '';
+        }
+
+        async function addMember() {
+            const name = newMemberInput.value.trim();
+            if (!name) { showToast('请输入用户名'); return; }
+            if (!USER_CREDENTIALS[name]) { showToast('用户不存在，请在代码 USER_CREDENTIALS 中添加'); return; }
+            const proj = findProject(currentProjectId);
+            if (!proj) return;
+            if (proj.members.includes(name)) { showToast('该成员已在项目中'); return; }
+            proj.members.push(name);
+            await saveProject(proj);
+            renderMembers(proj);
+            modalProjectMembers.textContent = '成员：' + proj.members.join(' · ');
+            renderDashboard();
+            showToast(`已添加成员 ${name}`);
+        }
+
+        // ================================================================
+        //  11. 步骤管理
+        // ================================================================
+        function renderSteps(project) {
+            modalStepBody.innerHTML = '';
+            project.steps.forEach((step, index) => {
+                const tr = document.createElement('tr');
+                tr.draggable = true;
+                tr.dataset.index = index;
+
+                const tdHandle = document.createElement('td');
+                tdHandle.style.width = '30px';
+                tdHandle.style.textAlign = 'center';
+                tdHandle.innerHTML = '<span class="drag-handle" title="拖动排序">☰</span>';
+
+                tr.addEventListener('dragstart', handleDragStart);
+                tr.addEventListener('dragenter', handleDragEnter);
+                tr.addEventListener('dragover', handleDragOver);
+                tr.addEventListener('dragleave', handleDragLeave);
+                tr.addEventListener('drop', handleDrop);
+                tr.addEventListener('dragend', handleDragEnd);
+
+                const tdName = document.createElement('td');
+                tdName.className = 'step-name';
+                const inpName = document.createElement('input');
+                inpName.type = 'text';
+                inpName.value = step.name;
+                inpName.placeholder = '步骤名称';
+                inpName.addEventListener('change', async function() {
+                    const val = this.value.trim();
+                    if (val) {
+                        step.name = val;
+                        await saveProject(project);
+                    } else {
+                        this.value = step.name;
+                        showToast('步骤名不能为空');
+                    }
+                });
+                tdName.appendChild(inpName);
+
+                const tdProg = document.createElement('td');
+                tdProg.className = 'progress-cell';
+                const inpProg = document.createElement('input');
+                inpProg.type = 'number';
+                inpProg.min = 0;
+                inpProg.max = 100;
+                inpProg.value = Number(step.progress) || 0;
+                const displaySpan = document.createElement('span');
+                displaySpan.className = 'progress-display';
+                function updateDisplay() {
+                    const v = parseInt(inpProg.value) || 0;
+                    displaySpan.textContent = v + '%';
+                    displaySpan.className = 'progress-display ' + (v >= 100 ? 'green' : 'red');
+                }
+                updateDisplay();
+                inpProg.addEventListener('input', async function() {
+                    let v = parseInt(this.value) || 0;
+                    if (v < 0) v = 0;
+                    if (v > 100) v = 100;
+                    this.value = v;
+                    step.progress = v;
+                    updateDisplay();
+                    await saveProject(project);
+                });
+                tdProg.appendChild(inpProg);
+                tdProg.appendChild(displaySpan);
+
+                const tdRemark = document.createElement('td');
+                tdRemark.className = 'remark-cell';
+                const ul = document.createElement('ul');
+                ul.className = 'remark-list';
+                const remarks = step.remarks || [];
+                remarks.forEach(r => {
+                    const li = document.createElement('li');
+                    const contentSpan = document.createElement('span');
+                    contentSpan.className = 'rm-content';
+                    contentSpan.innerHTML = `<span class="rm-user">${escapeHtml(r.user)}</span>：${escapeHtml(r.content)}<span class="rm-time">${formatTime(r.time)}</span>`;
+                    li.appendChild(contentSpan);
+                    if (r.user === currentUser) {
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'rm-del';
+                        delBtn.textContent = '✕';
+                        delBtn.title = '删除此备注';
+                        delBtn.addEventListener('click', async () => {
+                            step.remarks = step.remarks.filter(rem => rem !== r);
+                            await saveProject(project);
+                            renderSteps(project);
+                            showToast('已删除备注');
+                        });
+                        li.appendChild(delBtn);
+                    }
+                    ul.appendChild(li);
+                });
+                tdRemark.appendChild(ul);
+
+                const addDiv = document.createElement('div');
+                addDiv.className = 'remark-add';
+                const inpRemark = document.createElement('input');
+                inpRemark.type = 'text';
+                inpRemark.placeholder = '添加备注…';
+                const btnAdd = document.createElement('button');
+                btnAdd.className = 'btn btn-sm';
+                btnAdd.textContent = '添加';
+                btnAdd.addEventListener('click', async function() {
+                    const content = inpRemark.value.trim();
+                    if (!content) { showToast('请输入备注内容'); return; }
+                    if (!step.remarks) step.remarks = [];
+                    step.remarks.push({ user: currentUser, content: content, time: Date.now() });
+                    await saveProject(project);
+                    renderSteps(project);
+                    showToast('备注已添加');
+                });
+                addDiv.appendChild(inpRemark);
+                addDiv.appendChild(btnAdd);
+                tdRemark.appendChild(addDiv);
+
+                const tdActions = document.createElement('td');
+                tdActions.className = 'step-actions';
+                const delStepBtn = document.createElement('button');
+                delStepBtn.className = 'btn btn-danger btn-xs';
+                delStepBtn.textContent = '删除';
+                delStepBtn.addEventListener('click', async () => {
+                    if (confirm(`确定删除步骤「${step.name}」吗？`)) {
+                        project.steps.splice(index, 1);
+                        await saveProject(project);
+                        renderSteps(project);
+                        renderDashboard();
+                        showToast('已删除步骤');
+                    }
+                });
+                tdActions.appendChild(delStepBtn);
+
+                tr.appendChild(tdHandle);
+                tr.appendChild(tdName);
+                tr.appendChild(tdProg);
+                tr.appendChild(tdRemark);
+                tr.appendChild(tdActions);
+                modalStepBody.appendChild(tr);
+            });
+        }
+
+        // ================================================================
+        //  12. 拖拽排序逻辑
+        // ================================================================
+        function handleDragStart(e) {
+            dragSrcIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', dragSrcIndex);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            if (dragSrcIndex === null) return;
+            const targetIndex = parseInt(this.dataset.index);
+            if (dragSrcIndex === targetIndex) return;
+
+            const proj = findProject(currentProjectId);
+            if (!proj) return;
+
+            const movedStep = proj.steps[dragSrcIndex];
+            proj.steps.splice(dragSrcIndex, 1);
+            proj.steps.splice(targetIndex, 0, movedStep);
+
+            dragSrcIndex = null;
+            await saveProject(proj);
+            renderSteps(proj);
+            showToast('已调整步骤顺序');
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            modalStepBody.querySelectorAll('tr').forEach(row => row.classList.remove('drag-over'));
+            dragSrcIndex = null;
+        }
+
+        async function addStep() {
+            const name = newStepInput.value.trim();
+            if (!name) { showToast('请输入步骤名称'); return; }
+            const proj = findProject(currentProjectId);
+            if (!proj) return;
+            proj.steps.push({ name: name, progress: 0, remarks: [] });
+            newStepInput.value = '';
+            await saveProject(proj);
+            renderSteps(proj);
+            renderDashboard();
+            showToast(`已添加步骤「${name}」`);
+        }
+
+        // ================================================================
+        //  13. 新建 / 删除项目
+        // ================================================================
+        async function createNewProject() {
+            const newProject = {
+                id: 'proj_' + Date.now(),
+                name: '新项目',
+                members: [currentUser],
+                steps: []
+            };
+
+            projects.push(newProject);
+            saveProjectsToLocal();
+            renderDashboard();
+            openProjectDetail(newProject.id);
+            showToast('已创建新项目，请编辑名称和步骤');
+
+            try {
+                const saved = await saveProject(newProject);
+                if (!saved) {
+                    showToast('云端同步失败，数据已保存到本地');
+                }
+            } catch (e) {
+                showToast('云端同步失败，数据已保存到本地');
+            }
+        }
+
+        async function deleteProject(projectId) {
+            if (!confirm('确定删除此项目吗？所有数据将丢失！')) return;
+
+            projects = projects.filter(p => p.id !== projectId);
+            saveProjectsToLocal();
+            if (currentProjectId === projectId) closeModal();
+            renderDashboard();
+
+            await deleteProjectBackend(projectId);
+            showToast('已删除项目');
+        }
+
+        // ================================================================
+        //  14. 事件绑定 & 初始化
+        // ================================================================
+        function init() {
+            const autoLoggedIn = tryAutoLogin();
+
+            loginBtn.addEventListener('click', doLogin);
+            usernameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+            passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+            logoutBtn.addEventListener('click', doLogout);
+            newProjectBtn.addEventListener('click', createNewProject);
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            modalCloseFooterBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('active')) closeModal(); });
+
+            deleteProjectBtn.addEventListener('click', () => { if (currentProjectId) deleteProject(currentProjectId); });
+
+            addMemberBtn.addEventListener('click', addMember);
+            newMemberInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addMember(); });
+
+            addStepBtn.addEventListener('click', addStep);
+            newStepInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addStep(); });
+
+            modalProjectName.addEventListener('change', async function() {
+                const val = this.value.trim();
+                if (val) {
+                    const proj = findProject(currentProjectId);
+                    if (proj) {
+                        proj.name = val;
+                        await saveProject(proj);
+                        renderDashboard();
+                    }
+                } else {
+                    this.value = findProject(currentProjectId)?.name || '';
+                    showToast('项目名称不能为空');
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
